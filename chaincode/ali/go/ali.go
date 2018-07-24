@@ -12,8 +12,9 @@ import (
     "bytes"
 
     "github.com/hyperledger/fabric/core/chaincode/shim"
+    bccsp "github.com/hyperledger/fabric/bccsp"
+    sw "github.com/hyperledger/fabric/bccsp/sw"
     sc "github.com/hyperledger/fabric/protos/peer"
-    simplejson "github.com/bitly/go-simplejson"
 )
 
 // Define the Smart Contract structure
@@ -51,6 +52,7 @@ func (s *SmartContract) Invoke(APIstub shim.ChaincodeStubInterface) sc.Response 
 func (s *SmartContract) addRecord(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
     if len(args) != 5 {
         return shim.Error("Incorrect number of arguments. Expecting 5")
+        //return nil
     }
 
     var record = Record{ID: args[1], Year: args[2], Institute: args[3], Position: args[4]}
@@ -62,11 +64,10 @@ func (s *SmartContract) addRecord(APIstub shim.ChaincodeStubInterface, args []st
             panic(err)
         }
         for _, el := range orgarray {
-            js1, _ := json.Marshal(el)
-            js2, _ := simplejson.NewJson(js1)
-            year, _ := js2.Get("year").String()
-            if year == args[2] {
+            elmap := el.(map[string]interface{})
+            if elmap["year"] == args[2] {
                 return shim.Success(nil)
+                //return nil
             }
         }
     }
@@ -87,25 +88,24 @@ func (s *SmartContract) getRecord(APIstub shim.ChaincodeStubInterface, args []st
         return shim.Success(nil)
     }
     var orgarray []interface{}
-    var record *simplejson.Json
+    var institute interface{}
     if err := json.Unmarshal(orgbytes, &orgarray); err != nil {
         panic(err)
     }
     for _, el := range orgarray {
-        js1, _ := json.Marshal(el)
-        js2, _ := simplejson.NewJson(js1)
-        year, _ := js2.Get("year").String()
-        if year == args[2] {
-            record = js2
+        elmap := el.(map[string]interface{})
+        if elmap["year"] == args[2] {
+            institute = elmap["institute"]
             break
         }
     }
-    if record == nil {
+    if institute == nil {
         return shim.Success(nil)
     }
 
-    institute, _ := record.Get("institute").Bytes()
-    return shim.Success(institute)
+    instituteAsBytes, _ := json.Marshal(institute)
+    instituteAsBytes = instituteAsBytes[1:len(instituteAsBytes)-1]
+    return shim.Success(instituteAsBytes)
 }
 
 func (s *SmartContract) encRecord(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
@@ -140,10 +140,8 @@ func (s *SmartContract) encRecord(APIstub shim.ChaincodeStubInterface, args []st
             panic(err)
         }
         for _, el := range orgarray {
-            js1, _ := json.Marshal(el)
-            js2, _ := simplejson.NewJson(js1)
-            year, _ := js2.Get("year").String()
-            if year == args[2] {
+            elmap := el.(map[string]interface{})
+            if elmap["year"] == args[2] {
                 return shim.Success(nil)
             }
         }
@@ -170,6 +168,7 @@ func (s *SmartContract) decRecord(APIstub shim.ChaincodeStubInterface, args[]str
     cipherText, _ := APIstub.GetState(args[1])
     if cipherText == nil {
         return shim.Success(nil)
+        //return nil
     }
 
     // get decrypt key and iv
@@ -181,8 +180,6 @@ func (s *SmartContract) decRecord(APIstub shim.ChaincodeStubInterface, args[]str
     key = ZeroPadding(key, aes.BlockSize)
     plaintextlen := len(cipherText) - aes.BlockSize
     iv := cipherText[plaintextlen:]
-    //jsontmp, _ := json.Marshal(iv)
-    //return shim.Success(jsontmp)
 
     // validate ciphertext
     cipherText = cipherText[:plaintextlen]
@@ -208,12 +205,11 @@ func (s *SmartContract) decRecord(APIstub shim.ChaincodeStubInterface, args[]str
         panic(err)
     }
     for _, el := range plainarray {
-        js1, _ := json.Marshal(el)
-        js2, _ := simplejson.NewJson(js1)
-        year, _ := js2.Get("year").String()
-        if year == args[2] {
-            institute, _ := js2.Get("institute").Bytes()
-            return shim.Success(institute)
+        elmap := el.(map[string]interface{})
+        if elmap["year"] == args[2] {
+            instituteAsBytes, _ := json.Marshal(elmap["institute"])
+            instituteAsBytes = instituteAsBytes[1:len(instituteAsBytes)-1]
+            return shim.Success(instituteAsBytes)
         }
     }
 
