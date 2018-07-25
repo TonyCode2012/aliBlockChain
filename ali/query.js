@@ -55,10 +55,10 @@ Fabric_Client.newDefaultKeyValueStore({ path: store_path
 		//targets : --- letting this default to the peers assigned to the channel
 		chaincodeId: 'ali',
 		//fcn: 'queryAllCars',
-		//fcn: 'decRecord',
-		fcn: 'getRecord',
-		args: ['1002','2018'],
-        //transientMap: {'DECKEY':'1234567887654321'}
+		fcn: 'decRecord',
+		//fcn: 'getRecord',
+		args: ['1008','2018'],
+        transientMap: {'DECKEY':'1234567887654321'}
 	};
 
 	// send the query proposal to the peer

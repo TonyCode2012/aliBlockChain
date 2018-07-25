@@ -61,18 +61,17 @@ Fabric_Client.newDefaultKeyValueStore({ path: store_path
 	var request = {
 		//targets: let default to the peer assigned to the client
 		chaincodeId: 'ali',
-		fcn: 'addRecord',
-		args: ['1002','2018','jiaotong','master'],
+		//fcn: 'addRecord',
+		//args: ['1002','2018','jiaotong','master'],
 		//args: ['addRecord','1002','2003','collegel','bachelor'],
 		//args: ['addRecord','1002','2003','jiaotong','bachelor'],
 		//args: ['addRecord','1002','1999','collegel','master'],
 		//fcn: 'getRecord',
 		//args: ['getRecord','1001','1999'],
-		//fcn: 'encRecord',
-		//args: ['encRecord','1002','1999','collegel','master'],
-		//args: ['1008','2018','aiqiyi','master'],
+		fcn: 'encRecord',
+		args: ['1008','2018','aiqiyi','master'],
+        transientMap: {'ENCKEY':'1234567887654321','IV':'2345678998765432'},
         //transientMap: "{\"ENCKEY\":\"1234567887654321\",\"IV\":\"2345678998765432\"}",
-        //transientMap: {'ENCKEY':'1234567887654321','IV':'2345678998765432'},
 		chainId: 'mychannel',
 		txId: tx_id
 	};

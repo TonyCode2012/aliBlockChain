@@ -8,8 +8,9 @@
 set -e
 
 # clear docker container and network
-docker rm -f $(docker ps -aq)
-docker network prune
+#../first-network/byfn.sh down
+#docker rm -f $(docker ps -aq)
+#docker network prune
 
 # don't rewrite paths for Windows Git Bash users
 basedir=`dirname $0`
@@ -52,3 +53,4 @@ node $basedir/registerUser.js
 #node $basedir/invoke.js
 #node $basedir/query.js
 #$basedir/test.sh
+$basedir/testAddGet.sh
