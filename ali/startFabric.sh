@@ -9,8 +9,8 @@ set -e
 
 # clear docker container and network
 #../first-network/byfn.sh down
-#docker rm -f $(docker ps -aq)
-#docker network prune
+docker rm -f $(docker ps -aq)
+docker network prune
 
 # don't rewrite paths for Windows Git Bash users
 basedir=`dirname $0`
@@ -52,5 +52,6 @@ node $basedir/registerUser.js
 #docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n ali -c ' {"Args":["encRecord","1009","2008","collegel","bachelor"]}'  --transient "{\"ENCKEY\":\"1234567887654321\",\"IV\":\"2345678998765432\"}"
 #node $basedir/invoke.js
 #node $basedir/query.js
-#$basedir/test.sh
+#$basedir/testEncDec.sh
 $basedir/testAddGet.sh
+#$basedir/test.sh

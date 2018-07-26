@@ -1,9 +1,7 @@
 echo "[INFO] testing adding record"
 echo "[INFO] case 1: add duplicated record"
 docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n ali -c '{"Args":["addRecord","1002","2008","collegel1","bachelor"]}'
-sleep 2
 docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n ali -c '{"Args":["addRecord","1002","2008","collegel2","bachelor"]}'
-sleep 2
 docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n ali -c '{"Args":["addRecord","1002","2008","collegel3","bachelor"]}'
 sleep 2
 docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n ali -c '{"Args":["getRecord","1002","2008"]}'
@@ -12,9 +10,7 @@ docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -
 
 echo "[INFO] case 2: add smae ID, different years record"
 docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n ali -c '{"Args":["addRecord","1002","2013","collegel","Unknown"]}'
-sleep 2
 docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n ali -c '{"Args":["addRecord","1002","2014","sjtu","master"]}'
-sleep 2
 docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n ali -c '{"Args":["addRecord","1002","2014","university","master"]}'
 sleep 2
 docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n ali -c '{"Args":["getRecord","1002","2013"]}'
@@ -22,7 +18,6 @@ docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -
 
 echo "[INFO] case 3: encrypt record"
 docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n ali -c '{"Args":["encRecord","1009","2008","collegel","bachelor"]}' --transient "{\"ENCKEY\":\"1234567887654321\",\"IV\":\"2345678998765432\"}"
-sleep 2
 docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n ali -c '{"Args":["encRecord","1009","2008","xjtu","bachelor"]}' --transient "{\"ENCKEY\":\"1234567887654321\",\"IV\":\"2345678998765432\"}"
 sleep 2
 docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n ali -c '{"Args":["decRecord","1009","2008"]}' --transient "{\"DECKEY\":\"1234567887654321\"}"
