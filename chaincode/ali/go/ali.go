@@ -55,10 +55,6 @@ func (s *SmartContract) addRecord(APIstub shim.ChaincodeStubInterface, args []st
     orgobj := writemap[userID]
     var orgarray []interface{}
     if orgobj != nil {
-        //var orgobj interface{}
-        //if err := json.Unmarshal(orgbyte, &orgobj); err != nil {
-        //    return shim.Error("Add record failed!")
-        //}
         orgmap := orgobj.(map[string]interface{})
         if orgmap["encrypted"] == "yes" {
             return shim.Error("Encrypted record has been added!")
@@ -141,10 +137,6 @@ func (s *SmartContract) encRecord(APIstub shim.ChaincodeStubInterface, args []st
     orgobj := writemap[userID]
     var orgarray []interface{}
     if orgobj != nil {
-        //var orgobj interface{}
-        //if err := json.Unmarshal(orgcipherobj, &orgobj); err != nil {
-        //    return shim.Error("Unmarshal data failed!")
-        //}
         orgmap := orgobj.(map[string]interface{})
         if orgmap["encrypted"] == "no" {
             return shim.Error("Record cannot be decrypted!")
