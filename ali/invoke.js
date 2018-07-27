@@ -60,10 +60,18 @@ Fabric_Client.newDefaultKeyValueStore({ path: store_path
 	// must send the proposal to endorsing peers
 	var request = {
 		//targets: let default to the peer assigned to the client
-		chaincodeId: 'fabcar',
-		//fcn: 'createCar',
-		fcn: 'changeCarOwner',
-		args: ['CAR10','Yaoz'],
+		chaincodeId: 'ali',
+		fcn: 'addRecord',
+		args: ['1002','2018','jiaotong','master'],
+		//args: ['addRecord','1002','2003','collegel','bachelor'],
+		//args: ['addRecord','1002','2003','jiaotong','bachelor'],
+		//args: ['addRecord','1002','1999','collegel','master'],
+		//fcn: 'getRecord',
+		//args: ['getRecord','1001','1999'],
+		//fcn: 'encRecord',
+		//args: ['1008','2018','aiqiyi','master'],
+        transientMap: {'ENCKEY':'1234567887654321','IV':'2345678998765432'},
+        //transientMap: "{\"ENCKEY\":\"1234567887654321\",\"IV\":\"2345678998765432\"}",
 		chainId: 'mychannel',
 		txId: tx_id
 	};
@@ -74,6 +82,9 @@ Fabric_Client.newDefaultKeyValueStore({ path: store_path
 	var proposalResponses = results[0];
 	var proposal = results[1];
 	let isProposalGood = false;
+    var data = proposalResponses[0].response.payload;
+    data = JSON.parse(JSON.stringify(data)) //console.log(JSON.stringify(data))
+    console.log(byte2String(data.data))
 	if (proposalResponses && proposalResponses[0].response &&
 		proposalResponses[0].response.status === 200) {
 			isProposalGood = true;
@@ -160,3 +171,25 @@ Fabric_Client.newDefaultKeyValueStore({ path: store_path
 }).catch((err) => {
 	console.error('Failed to invoke successfully :: ' + err);
 });
+
+function byte2String(arr) {
+    if(typeof arr === ' string' ) {
+        return arr;
+    }
+    var str = ' ' , _arr = arr;
+    for(var i = 0; i < _arr.length; i++) {
+        var one = _arr[i].toString(2),v = one.match(/^1+?(?=0)/);
+        if(v && one.length == 8) {
+            var bytesLength = v[0].length;
+            var store = _arr[i].toString(2).slice(7 - bytesLength);
+            for(var st = 1; st < bytesLength; st++) {
+                store += _arr[st + i].toString(2).slice(2);
+            }
+            str += String.fromCharCode(parseInt(store, 2));
+            i += bytesLength - 1;
+        } else {
+            str += String.fromCharCode(_arr[i]);
+        }
+    }
+    return str;
+}

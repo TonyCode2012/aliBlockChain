@@ -53,15 +53,23 @@ Fabric_Client.newDefaultKeyValueStore({ path: store_path
 	// queryAllCars chaincode function - requires no arguments , ex: args: [''],
 	const request = {
 		//targets : --- letting this default to the peers assigned to the channel
-		chaincodeId: 'fabcar',
+		chaincodeId: 'ali',
 		//fcn: 'queryAllCars',
-		fcn: 'queryCar',
-		args: ['CAR10']
+		//fcn: 'decRecord',
+		fcn: 'getRecord',
+		args: ['1002','2018'],
+        transientMap: {'DECKEY':'1234567887654321'}
 	};
 
 	// send the query proposal to the peer
 	return channel.queryByChaincode(request);
 }).then((query_responses) => {
+    //var data = proposalResponses[0].response.payload;
+    //var data = query_responses;
+    //data = JSON.parse(JSON.stringify(data)) //console.log(JSON.stringify(data))
+    //console.log(data)
+    //data = data[0]
+    //console.log(byte2String(data.data))
 	console.log("Query has completed, checking results");
 	// query_responses could have more than one  results if there multiple peers were used as targets
 	if (query_responses && query_responses.length == 1) {
@@ -76,3 +84,25 @@ Fabric_Client.newDefaultKeyValueStore({ path: store_path
 }).catch((err) => {
 	console.error('Failed to query successfully :: ' + err);
 });
+
+function byte2String(arr) {
+    if(typeof arr === ' string' ) {
+        return arr;
+    }
+    var str = ' ' , _arr = arr;
+    for(var i = 0; i < _arr.length; i++) {
+        var one = _arr[i].toString(2),v = one.match(/^1+?(?=0)/);
+        if(v && one.length == 8) {
+            var bytesLength = v[0].length;
+            var store = _arr[i].toString(2).slice(7 - bytesLength);
+            for(var st = 1; st < bytesLength; st++) {
+                store += _arr[st + i].toString(2).slice(2);
+            }
+            str += String.fromCharCode(parseInt(store, 2));
+            i += bytesLength - 1;
+        } else {
+            str += String.fromCharCode(_arr[i]);
+        }
+    }
+    return str;
+}
