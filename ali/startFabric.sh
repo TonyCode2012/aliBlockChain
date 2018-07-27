@@ -52,6 +52,6 @@ node $basedir/registerUser.js
 #docker exec cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n ali -c ' {"Args":["encRecord","1009","2008","collegel","bachelor"]}'  --transient "{\"ENCKEY\":\"1234567887654321\",\"IV\":\"2345678998765432\"}"
 #node $basedir/invoke.js
 #node $basedir/query.js
-#$basedir/testEncDec.sh
-$basedir/testAddGet.sh
+$basedir/testEncDec.sh
+#$basedir/testAddGet.sh
 #$basedir/test.sh

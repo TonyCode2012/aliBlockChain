@@ -1,8 +1,10 @@
 package main
 
 import (
+    "crypto/aes"
     "encoding/json"
     "fmt"
+    "bytes"
 
     "github.com/hyperledger/fabric/core/chaincode/shim"
     "github.com/hyperledger/fabric/bccsp/sw"
@@ -22,7 +24,7 @@ type Record struct {
 }
 
 // map use to record put status
-var writemap map[string]interface{}
+var writemap map[string][]byte
 
 /*
  * The addRecord method is called to create a new record
@@ -52,18 +54,18 @@ func (s *SmartContract) addRecord(APIstub shim.ChaincodeStubInterface, args []st
     userID := args[1]
 
     // get original data
-    orgobj := writemap[userID]
+    orgbytes := writemap[userID]
     var orgarray []interface{}
-    if orgobj != nil {
-        //var orgobj interface{}
-        //if err := json.Unmarshal(orgbyte, &orgobj); err != nil {
-        //    return shim.Error("Add record failed!")
-        //}
-        orgmap := orgobj.(map[string]interface{})
-        if orgmap["encrypted"] == "yes" {
-            return shim.Error("Encrypted record has been added!")
+    if orgbytes != nil {
+        var orgobj interface{}
+        if err := json.Unmarshal(orgbytes, &orgobj); err != nil {
+            return shim.Error("Add record failed!")
         }
-        orgarray = (orgmap["data"]).([]interface{})
+        orgmap := orgobj.(map[string]interface{})
+        if orgmap["encrypted"] == "no" {
+            orgarray = (orgmap["data"]).([]interface{})
+            //return shim.Error("Encrypted record has been added!")
+        }
         for _, el := range orgarray {
             elmap := el.(map[string]interface{})
             if elmap["year"] == args[2] {
@@ -81,11 +83,8 @@ func (s *SmartContract) addRecord(APIstub shim.ChaincodeStubInterface, args []st
     datamap := make(map[string]interface{})
     datamap["data"] = orgarray
     datamap["encrypted"] = "no"
-    //jsonbytes, _ := json.Marshal(datamap)
-    //return shim.Success(jsonbytes)
-    //datamapAsBytes, _ := json.Marshal(datamap)
-    //writemap[userID] = datamapAsBytes
-    writemap[userID] = datamap
+    datamapAsBytes, _ := json.Marshal(datamap)
+    writemap[userID] = datamapAsBytes
 
     return shim.Success(nil)
 }
@@ -130,26 +129,24 @@ func (s *SmartContract) encRecord(APIstub shim.ChaincodeStubInterface, args []st
     if err != nil {
         return shim.Error("Get transient failed!")
     }
-    key, _ := json.Marshal(encryptKV["ENCKEY"])
-    iv, _ := json.Marshal(encryptKV["IV"])
-    key = key[1:len(key)-1]
-    iv = iv[1:len(iv)-1]
+    key := GetKey(encryptKV["ENCKEY"])
+    iv := GetIV(encryptKV["IV"])
 
     userID := args[1]
 
     // get previous records
-    orgobj := writemap[userID]
+    orgbytes := writemap[userID]
     var orgarray []interface{}
-    if orgobj != nil {
-        //var orgobj interface{}
-        //if err := json.Unmarshal(orgcipherobj, &orgobj); err != nil {
-        //    return shim.Error("Unmarshal data failed!")
-        //}
-        orgmap := orgobj.(map[string]interface{})
-        if orgmap["encrypted"] == "no" {
-            return shim.Error("Record cannot be decrypted!")
+    if orgbytes != nil {
+        var orgobj interface{}
+        if err := json.Unmarshal(orgbytes, &orgobj); err != nil {
+            return shim.Error("Unmarshal data failed!")
         }
-        orgarray = (orgmap["data"]).([]interface{})
+        orgmap := orgobj.(map[string]interface{})
+        if orgmap["encrypted"] == "yes" {
+            orgarray = (orgmap["data"]).([]interface{})
+            //return shim.Error("Record cannot be decrypted!")
+        }
         for _, el := range orgarray {
             elmap := el.(map[string]interface{})
             if elmap["year"] == args[2] {
@@ -172,9 +169,8 @@ func (s *SmartContract) encRecord(APIstub shim.ChaincodeStubInterface, args []st
     datamap := make(map[string]interface{})
     datamap["data"] = orgarray
     datamap["encrypted"] = "yes"
-    //datamapAsBytes, _ := json.Marshal(datamap)
-    //writemap[userID] = datamapAsBytes
-    writemap[userID] = datamap
+    datamapAsBytes, _ := json.Marshal(datamap)
+    writemap[userID] = datamapAsBytes
 
     return shim.Success(nil)
 }
@@ -194,8 +190,7 @@ func (s *SmartContract) decRecord(APIstub shim.ChaincodeStubInterface, args[]str
     if err != nil {
         return shim.Error("Get transient failed!")
     }
-    key, _ := json.Marshal(decryptKV["DECKEY"])
-    key = key[1:len(key)-1]
+    key := GetKey(decryptKV["DECKEY"])
 
     // decrpyt ciphertext
     plaintext, err := sw.AESCBCPKCS7Decrypt(key, ciphertext)
@@ -220,6 +215,30 @@ func (s *SmartContract) decRecord(APIstub shim.ChaincodeStubInterface, args[]str
     return shim.Success(nil)
 }
 
+func GetIV(iv []byte) []byte {
+    if len(iv) >= aes.BlockSize {
+        iv = iv[0:aes.BlockSize]
+    } else {
+        iv = ZeroPadding(iv, aes.BlockSize)
+    }
+    return iv
+}
+
+func GetKey(key []byte) []byte {
+    if len(key) >= 32 {
+        key = key[0:32]
+    } else {
+        key = ZeroPadding(key, 32)
+    }
+    return key
+}
+
+func ZeroPadding(text []byte, blockSize int) []byte {
+    padding := blockSize - len(text)%blockSize
+    padtext := bytes.Repeat([]byte{0}, padding)
+    return append(text, padtext...)
+}
+
 func (s *SmartContract) Init(APIstub shim.ChaincodeStubInterface) sc.Response {
     return shim.Success(nil)
 }
@@ -227,7 +246,7 @@ func (s *SmartContract) Init(APIstub shim.ChaincodeStubInterface) sc.Response {
 // The main function is only relevant in unit test mode. Only included here for completeness.
 func main() {
 
-    writemap = make(map[string]interface{})
+    writemap = make(map[string][]byte)
     // Create a new Smart Contract
     err := shim.Start(new(SmartContract))
     if err != nil {
