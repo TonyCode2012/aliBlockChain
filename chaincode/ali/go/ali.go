@@ -24,7 +24,7 @@ type Record struct {
 }
 
 // map use to record put status
-var writemap map[string][]byte
+var writemap map[string]interface{}
 
 /*
  * The addRecord method is called to create a new record
@@ -54,21 +54,17 @@ func (s *SmartContract) addRecord(APIstub shim.ChaincodeStubInterface, args []st
     userID := args[1]
 
     // get original data
-    orgbytes := writemap[userID]
+    orgobj := writemap[userID]
     var orgarray []interface{}
-    if orgbytes != nil {
-        var orgobj interface{}
-        if err := json.Unmarshal(orgbytes, &orgobj); err != nil {
-            return shim.Error("Add record failed!")
-        }
+    if orgobj != nil {
         orgmap := orgobj.(map[string]interface{})
         if orgmap["encrypted"] == "no" {
             orgarray = (orgmap["data"]).([]interface{})
             //return shim.Error("Encrypted record has been added!")
         }
         for _, el := range orgarray {
-            elmap := el.(map[string]interface{})
-            if elmap["year"] == args[2] {
+            elmap := el.(Record)
+            if elmap.Year == args[2] {
                 return shim.Success(nil)
             }
         }
@@ -83,8 +79,7 @@ func (s *SmartContract) addRecord(APIstub shim.ChaincodeStubInterface, args []st
     datamap := make(map[string]interface{})
     datamap["data"] = orgarray
     datamap["encrypted"] = "no"
-    datamapAsBytes, _ := json.Marshal(datamap)
-    writemap[userID] = datamapAsBytes
+    writemap[userID] = datamap
 
     return shim.Success(nil)
 }
@@ -135,21 +130,17 @@ func (s *SmartContract) encRecord(APIstub shim.ChaincodeStubInterface, args []st
     userID := args[1]
 
     // get previous records
-    orgbytes := writemap[userID]
+    orgobj := writemap[userID]
     var orgarray []interface{}
-    if orgbytes != nil {
-        var orgobj interface{}
-        if err := json.Unmarshal(orgbytes, &orgobj); err != nil {
-            return shim.Error("Unmarshal data failed!")
-        }
+    if orgobj != nil {
         orgmap := orgobj.(map[string]interface{})
         if orgmap["encrypted"] == "yes" {
             orgarray = (orgmap["data"]).([]interface{})
             //return shim.Error("Record cannot be decrypted!")
         }
         for _, el := range orgarray {
-            elmap := el.(map[string]interface{})
-            if elmap["year"] == args[2] {
+            elmap := el.(Record)
+            if elmap.Year == args[2] {
                 return shim.Success(nil)
             }
         }
@@ -169,8 +160,7 @@ func (s *SmartContract) encRecord(APIstub shim.ChaincodeStubInterface, args []st
     datamap := make(map[string]interface{})
     datamap["data"] = orgarray
     datamap["encrypted"] = "yes"
-    datamapAsBytes, _ := json.Marshal(datamap)
-    writemap[userID] = datamapAsBytes
+    writemap[userID] = datamap
 
     return shim.Success(nil)
 }
@@ -246,7 +236,7 @@ func (s *SmartContract) Init(APIstub shim.ChaincodeStubInterface) sc.Response {
 // The main function is only relevant in unit test mode. Only included here for completeness.
 func main() {
 
-    writemap = make(map[string][]byte)
+    writemap = make(map[string]interface{})
     // Create a new Smart Contract
     err := shim.Start(new(SmartContract))
     if err != nil {
