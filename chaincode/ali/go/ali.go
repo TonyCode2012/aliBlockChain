@@ -23,6 +23,7 @@ type Record struct {
 
 // map use to record put status
 var writemap map[string]interface{}
+var acc = 1
 
 /*
  * The addRecord method is called to create a new record
@@ -61,8 +62,8 @@ func (s *SmartContract) addRecord(APIstub shim.ChaincodeStubInterface, args []st
         }
         orgarray = (orgmap["data"]).([]interface{})
         for _, el := range orgarray {
-            elmap := el.(map[string]interface{})
-            if elmap["year"] == args[2] {
+            elmap := el.(Record)
+            if elmap.Year == args[2] {
                 return shim.Success(nil)
             }
         }
@@ -77,10 +78,6 @@ func (s *SmartContract) addRecord(APIstub shim.ChaincodeStubInterface, args []st
     datamap := make(map[string]interface{})
     datamap["data"] = orgarray
     datamap["encrypted"] = "no"
-    //jsonbytes, _ := json.Marshal(datamap)
-    //return shim.Success(jsonbytes)
-    //datamapAsBytes, _ := json.Marshal(datamap)
-    //writemap[userID] = datamapAsBytes
     writemap[userID] = datamap
 
     return shim.Success(nil)
@@ -143,8 +140,8 @@ func (s *SmartContract) encRecord(APIstub shim.ChaincodeStubInterface, args []st
         }
         orgarray = (orgmap["data"]).([]interface{})
         for _, el := range orgarray {
-            elmap := el.(map[string]interface{})
-            if elmap["year"] == args[2] {
+            elmap := el.(Record)
+            if elmap.Year == args[2] {
                 return shim.Success(nil)
             }
         }
@@ -164,8 +161,6 @@ func (s *SmartContract) encRecord(APIstub shim.ChaincodeStubInterface, args []st
     datamap := make(map[string]interface{})
     datamap["data"] = orgarray
     datamap["encrypted"] = "yes"
-    //datamapAsBytes, _ := json.Marshal(datamap)
-    //writemap[userID] = datamapAsBytes
     writemap[userID] = datamap
 
     return shim.Success(nil)
