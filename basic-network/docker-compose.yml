@@ -117,9 +117,7 @@ services:
     volumes:
         - /var/run/:/host/var/run/
         - ./../chaincode/:/opt/gopath/src/github.com/
-          #- /root/gopath/src/github.com:/opt/go/src/github.com/
         - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
-          #- ./scripts:/opt/gopath/src/github.com/hyperledger/fabric/peer/scripts/
     networks:
         - basic
     #depends_on:

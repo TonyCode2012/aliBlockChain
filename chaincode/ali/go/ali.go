@@ -1,8 +1,10 @@
 package main
 
 import (
+    "crypto/aes"
     "encoding/json"
     "fmt"
+    "bytes"
 
     "github.com/hyperledger/fabric/core/chaincode/shim"
     "github.com/hyperledger/fabric/bccsp/sw"
@@ -57,10 +59,10 @@ func (s *SmartContract) addRecord(APIstub shim.ChaincodeStubInterface, args []st
     var orgarray []interface{}
     if orgobj != nil {
         orgmap := orgobj.(map[string]interface{})
-        if orgmap["encrypted"] == "yes" {
-            return shim.Error("Encrypted record has been added!")
+        if orgmap["encrypted"] == "no" {
+            orgarray = (orgmap["data"]).([]interface{})
+            //return shim.Error("Encrypted record has been added!")
         }
-        orgarray = (orgmap["data"]).([]interface{})
         for _, el := range orgarray {
             elmap := el.(Record)
             if elmap.Year == args[2] {
@@ -123,10 +125,8 @@ func (s *SmartContract) encRecord(APIstub shim.ChaincodeStubInterface, args []st
     if err != nil {
         return shim.Error("Get transient failed!")
     }
-    key, _ := json.Marshal(encryptKV["ENCKEY"])
-    iv, _ := json.Marshal(encryptKV["IV"])
-    key = key[1:len(key)-1]
-    iv = iv[1:len(iv)-1]
+    key := GetKey(encryptKV["ENCKEY"])
+    iv := GetIV(encryptKV["IV"])
 
     userID := args[1]
 
@@ -135,10 +135,10 @@ func (s *SmartContract) encRecord(APIstub shim.ChaincodeStubInterface, args []st
     var orgarray []interface{}
     if orgobj != nil {
         orgmap := orgobj.(map[string]interface{})
-        if orgmap["encrypted"] == "no" {
-            return shim.Error("Record cannot be decrypted!")
+        if orgmap["encrypted"] == "yes" {
+            orgarray = (orgmap["data"]).([]interface{})
+            //return shim.Error("Record cannot be decrypted!")
         }
-        orgarray = (orgmap["data"]).([]interface{})
         for _, el := range orgarray {
             elmap := el.(Record)
             if elmap.Year == args[2] {
@@ -181,8 +181,7 @@ func (s *SmartContract) decRecord(APIstub shim.ChaincodeStubInterface, args[]str
     if err != nil {
         return shim.Error("Get transient failed!")
     }
-    key, _ := json.Marshal(decryptKV["DECKEY"])
-    key = key[1:len(key)-1]
+    key := GetKey(decryptKV["DECKEY"])
 
     // decrpyt ciphertext
     plaintext, err := sw.AESCBCPKCS7Decrypt(key, ciphertext)
@@ -205,6 +204,30 @@ func (s *SmartContract) decRecord(APIstub shim.ChaincodeStubInterface, args[]str
     }
 
     return shim.Success(nil)
+}
+
+func GetIV(iv []byte) []byte {
+    if len(iv) >= aes.BlockSize {
+        iv = iv[0:aes.BlockSize]
+    } else {
+        iv = ZeroPadding(iv, aes.BlockSize)
+    }
+    return iv
+}
+
+func GetKey(key []byte) []byte {
+    if len(key) >= 32 {
+        key = key[0:32]
+    } else {
+        key = ZeroPadding(key, 32)
+    }
+    return key
+}
+
+func ZeroPadding(text []byte, blockSize int) []byte {
+    padding := blockSize - len(text)%blockSize
+    padtext := bytes.Repeat([]byte{0}, padding)
+    return append(text, padtext...)
 }
 
 func (s *SmartContract) Init(APIstub shim.ChaincodeStubInterface) sc.Response {
